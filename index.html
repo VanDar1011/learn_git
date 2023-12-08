@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Điều khiển đèn giao thông</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+        <script src="https://code.jquery.com/jquery-3.6.1.min.js" type="text/javascript"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, Helvetica, sans-serif;
+                background: #000;
+                color: #fff;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+            }
+            input {
+                width: 200px;
+                height: 50px;
+                border: none;
+                outline: none;
+                background-color: #181818;
+                color: #fff;
+                font-size: 22px;
+                padding: 0 20px;
+                border-radius: 10px;
+            }
+
+            .yellow,
+            .y-input {
+                color: yellow;
+            }
+            .green,
+            .g-input {
+                color: green;
+            }
+            .red,
+            .r-input {
+                color: red;
+            }
+            button {
+                margin-top: 20px;
+                width: 100px;
+                height: 40px;
+                font-size: 18px;
+                background-color: #0043fc;
+                color: #fff;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                border-radius: 8px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h3 class="yellow">Thời gian đèn vàng bật (đơn vị là giây)</h3>
+        <input type="text" class="y-input" placeholder="Vàng" /> <br />
+
+        <h3 class="green">Thời gian đèn xanh bật (đơn vị là giây)</h3>
+        <input type="text" class="g-input" placeholder="Xanh" /> <br />
+
+        <h3 class="red">Thời gian đèn đỏ bật (đơn vị là giây)</h3>
+        <input type="text" class="r-input" placeholder="Đỏ" /> <br />
+        <button id="btnGui">Lưu</button>
+    </body>
+
+    <script>
+        $("#btnGui").click(function () {
+            let redPin = $(".r-input").val() * 1000;
+            let yellowPin = $(".y-input").val() * 1000;
+            let greenPin = $(".g-input").val() * 1000;
+            let dulieu = {
+                do: redPin,
+                xanh: greenPin,
+                vang: yellowPin,
+            };
+            let chuoi_json = JSON.stringify(dulieu);
+            alert("Đèn xanh : " + dulieu.xanh / 1000 + " s\n" + "Đèn vàng : " + dulieu.vang / 1000 + " s\n" + "Đèn đỏ : " + dulieu.do / 1000 + " s");
+            message = new Paho.MQTT.Message(chuoi_json);
+            message.destinationName = "LEDALL";
+            client.send(message);
+        });
+
+        client = new Paho.MQTT.Client("broker.emqx.io", Number(8083), "ecf13803-a2c2-4813-b77a-610805d58bbc");
+
+        client.onConnectionLost = onConnectionLost;
+        client.onMessageArrived = onMessageArrived;
+
+        client.connect({ onSuccess: onConnect });
+
+        function onConnect() {
+            console.log("onConnect");
+            client.subscribe("deployment-t72cb557");
+        }
+
+        function onConnectionLost(responseObject) {
+            if (responseObject.errorCode !== 0) {
+                console.log("onConnectionLost:" + responseObject.errorMessage);
+            }
+        }
+
+        function onMessageArrived(message) {
+            console.log("onMessageArrived:" + message.payloadString);
+            var a = message.payloadString;
+            $("#nd").text(a);
+        }
+    </script>
+</html>
